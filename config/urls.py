@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -5,19 +6,29 @@ from django.urls import include, path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
 
-urlpatterns = [
-    path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
-    path(
-        "about/", TemplateView.as_view(template_name="pages/about.html"), name="about"
-    ),
-    # Django Admin, use {% url 'admin:index' %}
-    path(settings.ADMIN_URL, admin.site.urls),
-    # User management
-    path("users/", include("gaynde.users.urls", namespace="users")),
-    path("accounts/", include("allauth.urls")),
-    # Your stuff: custom urls includes go here
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# urlpatterns = [
+#     path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
+#     path(
+#         "about/", TemplateView.as_view(template_name="pages/about.html"), name="about"
+#     ),
+#     # Django Admin, use {% url 'admin:index' %}
+#     path(settings.ADMIN_URL, admin.site.urls),
+#     # User management
+#     path("users/", include("gaynde.users.urls", namespace="users")),
+#     path("accounts/", include("allauth.urls")),
+#     # Your stuff: custom urls includes go here
+# ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+urlpatterns = [
+    path('i18n/', include('django.conf.urls.i18n')),  # > Django-2.0
+
+    path('admin/', admin.site.urls),  # > Django-2.0
+
+    path('', include(apps.get_app_config('oscar').urls[0])),
+
+    # path('dashboard/cod/', include(cod_app.urls)),
+
+]
 
 if settings.DEBUG:
     # This allows the error pages to be debugged during development, just visit

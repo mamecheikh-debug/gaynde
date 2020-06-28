@@ -2,10 +2,19 @@
 Base settings to build other settings files upon.
 """
 from pathlib import Path
-
+import os
 import environ
+from django.contrib.messages import constants as messages
+from oscar.defaults import *
+
+env = environ.Env()
+
 
 ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
+
+def location(x): return os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), x)
+
 # gaynde/
 APPS_DIR = ROOT_DIR / "gaynde"
 env = environ.Env()
@@ -25,7 +34,7 @@ DEBUG = env.bool("DJANGO_DEBUG", False)
 # In Windows, this must be set to your system time zone.
 TIME_ZONE = "Africa/Dakar"
 # https://docs.djangoproject.com/en/dev/ref/settings/#language-code
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "fr-FR"
 # https://docs.djangoproject.com/en/dev/ref/settings/#site-id
 SITE_ID = 1
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-i18n
@@ -41,10 +50,22 @@ LOCALE_PATHS = [str(ROOT_DIR / "locale")]
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
+# DATABASES = {
+#     "default": env.db("DATABASE_URL", default="postgres:///gaynde")
+# }
+# DATABASES["default"]["ATOMIC_REQUESTS"] = True
+
 DATABASES = {
-    "default": env.db("DATABASE_URL", default="postgres:///gaynde")
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mydatabase',
+    }
 }
-DATABASES["default"]["ATOMIC_REQUESTS"] = True
+
+CACHES = {
+    'default': env.cache(default='locmemcache://'),
+}
+
 
 # URLS
 # ------------------------------------------------------------------------------
@@ -65,39 +86,79 @@ DJANGO_APPS = [
     # "django.contrib.humanize", # Handy template tags
     "django.contrib.admin",
     "django.forms",
+    'django.contrib.flatpages',
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    
+    'oscar',
+    'oscar.apps.analytics',
+    'oscar.apps.checkout',
+    'oscar.apps.address',
+    'oscar.apps.shipping',
+    'oscar.apps.catalogue',
+    'oscar.apps.catalogue.reviews',
+    'oscar.apps.partner',
+    'oscar.apps.basket',
+    'oscar.apps.payment',
+    'oscar.apps.offer',
+    'oscar.apps.order',
+    'oscar.apps.customer',
+    'oscar.apps.search',
+    'oscar.apps.voucher',
+    'oscar.apps.wishlists',
+    'oscar.apps.dashboard',
+    'oscar.apps.dashboard.reports',
+    'oscar.apps.dashboard.users',
+    'oscar.apps.dashboard.orders',
+    'oscar.apps.dashboard.catalogue',
+    'oscar.apps.dashboard.offers',
+    'oscar.apps.dashboard.partners',
+    'oscar.apps.dashboard.pages',
+    'oscar.apps.dashboard.ranges',
+    'oscar.apps.dashboard.reviews',
+    'oscar.apps.dashboard.vouchers',
+    'oscar.apps.dashboard.communications',
+    'oscar.apps.dashboard.shipping',
+
+    # 3rd-party apps that oscar depends on
+    'widget_tweaks',
+    'haystack',
+    'treebeard',
+    'sorl.thumbnail',
+    'django_tables2',
 ]
 
-LOCAL_APPS = [
-    "gaynde.users.apps.UsersConfig",
-    # Your stuff: custom apps go here
-]
+# LOCAL_APPS = [
+#     # Your stuff: custom apps go here
+# ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS 
 
 # MIGRATIONS
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#migration-modules
-MIGRATION_MODULES = {"sites": "gaynde.contrib.sites.migrations"}
+# MIGRATION_MODULES = {"sites": "gaynde.contrib.sites.migrations"}
 
 # AUTHENTICATION
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#authentication-backends
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
-]
+AUTHENTICATION_BACKENDS = (
+    'oscar.apps.customer.auth_backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-user-model
-AUTH_USER_MODEL = "users.User"
+# AUTH_USER_MODEL = "users.User"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-redirect-url
-LOGIN_REDIRECT_URL = "users:redirect"
+LOGIN_REDIRECT_URL = "/"
+APPEND_SLASH = True
+
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-url
-LOGIN_URL = "account_login"
+# LOGIN_URL = "account_login"
 
 # PASSWORDS
 # ------------------------------------------------------------------------------
@@ -132,12 +193,21 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.common.BrokenLinkEmailsMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    
+    # Allow languages to be selected
+    'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.http.ConditionalGetMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    
+    'oscar.apps.basket.middleware.BasketMiddleware',
+    'django.contrib.flatpages.middleware.FlatpageFallbackMiddleware',
+
 ]
 
 # STATIC
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#static-root
-STATIC_ROOT = str(ROOT_DIR / "staticfiles")
+STATIC_ROOT = location('/Users/mamecheikh/dev/gaynde-data/static')
 # https://docs.djangoproject.com/en/dev/ref/settings/#static-url
 STATIC_URL = "/static/"
 # https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#std:setting-STATICFILES_DIRS
@@ -151,7 +221,7 @@ STATICFILES_FINDERS = [
 # MEDIA
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-root
-MEDIA_ROOT = str(APPS_DIR / "media")
+MEDIA_ROOT = location("/Users/mamecheikh/dev/gaynde-data/media")
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
 MEDIA_URL = "/media/"
 
@@ -181,7 +251,13 @@ TEMPLATES = [
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
-                "gaynde.utils.context_processors.settings_context",
+                # "gaynde.utils.context_processors.settings_context",
+                
+                'oscar.apps.search.context_processors.search_form',
+                'oscar.apps.checkout.context_processors.checkout',
+                'oscar.apps.customer.notifications.context_processors.notifications',
+                'oscar.core.context_processors.metadata',
+
             ],
         },
     }
@@ -269,3 +345,107 @@ SOCIALACCOUNT_ADAPTER = "gaynde.users.adapters.SocialAccountAdapter"
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+
+# ====================
+# Messages contrib app
+# ====================
+
+MESSAGE_TAGS = {
+    messages.ERROR: 'danger'
+}
+
+# Haystack settings
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
+        'PATH': location('whoosh_index'),
+    },
+}
+
+# =============
+# Debug Toolbar
+# =============
+
+INTERNAL_IPS = ['127.0.0.1', '::1']
+
+
+# ==============
+# Oscar settings
+# ==============
+
+OSCAR_SHOP_TAGLINE = 'dieund ak diaay'
+
+OSCAR_RECENTLY_VIEWED_PRODUCTS = 20
+OSCAR_ALLOW_ANON_CHECKOUT = True
+
+# Order processing
+# ================
+
+# Sample order/line status settings. This is quite simplistic. It's like you'll
+# want to override the set_status method on the order object to do more
+# sophisticated things.
+OSCAR_INITIAL_ORDER_STATUS = 'Pending'
+OSCAR_INITIAL_LINE_STATUS = 'Pending'
+
+# This dict defines the new order statuses than an order can move to
+OSCAR_ORDER_STATUS_PIPELINE = {
+    'Pending': ('Being processed', 'Cancelled',),
+    'Being processed': ('Complete', 'Cancelled',),
+    'Cancelled': (),
+    'Complete': (),
+}
+
+# This dict defines the line statuses that will be set when an order's status
+# is changed
+OSCAR_ORDER_STATUS_CASCADE = {
+    'Being processed': 'Being processed',
+    'Cancelled': 'Cancelled',
+    'Complete': 'Shipped',
+}
+
+OSCAR_SHOP_NAME = 'KAAY DIEUND'
+
+OSCAR_DEFAULT_CURRENCY = 'CFA'
+
+# LESS/CSS
+# ========
+
+# We default to using CSS files, rather than the LESS files that generate them.
+# If you want to develop Oscar's CSS, then set OSCAR_USE_LESS=True to enable the
+# on-the-fly less processor.
+OSCAR_USE_LESS = False
+OSCAR_REQUIRED_ADDRESS_FIELDS = (
+    'first_name', 'last_name', 'line1', 'line4', 'country')
+
+
+# Sorl
+# ====
+
+THUMBNAIL_DEBUG = DEBUG
+THUMBNAIL_KEY_PREFIX = 'djeund-key-prefix'
+THUMBNAIL_KVSTORE = env(
+    'THUMBNAIL_KVSTORE',
+    default='sorl.thumbnail.kvstores.cached_db_kvstore.KVStore')
+THUMBNAIL_REDIS_URL = env('THUMBNAIL_REDIS_URL', default=None)
+
+
+# Django 1.6 has switched to JSON serializing for security reasons, but it does not
+# serialize Models. We should resolve this by extending the
+# django/core/serializers/json.Serializer to have the `dumps` function. Also
+# in tests/config.py
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
+
+# Security
+SECURE_SSL_REDIRECT = env.bool('SECURE_SSL_REDIRECT', default=False)
+SECURE_HSTS_SECONDS = env.int('SECURE_HSTS_SECONDS', default=0)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+
+
+
+# Try and import local settings which can be used to override any of the above.
+try:
+    from settings_local import *
+except ImportError:
+    pass
+
